@@ -4,6 +4,11 @@
  */
 
 var express = require('express')
+	, cookieparser = require('cookie-parser')
+	, session = require('express-session')
+	, RedisStore = require('connect-redis')(session) //session store in redis
+	, passport = require('passport')
+	, LocalStrategy = require('passport-local').Strategy
   //, routes = require('./routes')
   //, user = require('./routes/user')
   , http = require('http')
@@ -24,6 +29,31 @@ app.set('views', __dirname + '/views');
 app.set('view engine', 'ejs');
 app.use(express.favicon());
 app.use(express.logger('dev'));
+
+//app.use( cookieparser() );
+app.use( cookieparser('12390891237ASDFASDF!@#') ); //for security key
+app.use( session({
+	secret: 'key',
+	resave: false,
+	saveUninitialized: true,
+	//cookie: {secure: true}
+	store: new RedisStore({
+		//host: "119.194.139.163",
+		//port: 6379,
+		client: client		
+	})
+}) );
+
+app.use(passport.initialize());
+app.use( passport.session() );
+/*
+passport.use( new LocalStrategy(
+		function ( username, password, done) {
+			User.
+		}
+));
+*/
+
 app.use(express.bodyParser());
 app.use(express.methodOverride());
 app.use(app.router);
@@ -44,6 +74,9 @@ http.createServer(app).listen(app.get('port'), function(){
 });
 
 require('./routes/index')(app, redis, client);
+require('./routes/auth')(app, passport, LocalStrategy, redis, client);
+//require('./routes/session')(app, redis, client);
 require('./routes/user')(app, client);
+require('./routes/message')(app, redis, client);
 
 //client.end(true);
