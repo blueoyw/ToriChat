@@ -81,7 +81,6 @@ http.createServer(app).listen(app.get('port'), function(){
 require('./routes/index')(app, redis, client);
 require('./routes/auth')(app, passport, LocalStrategy, redis, client, redisKey, hasher );
 //require('./routes/session')(app, redis, client);
-require('./routes/user')(app, client);
 require('./routes/chat')(app, redis, client, redisKey);
 
 //client.end(true);
