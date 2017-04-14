@@ -1,6 +1,6 @@
 
 // for authentication passport js
-module.exports = function(app, passport, LocalStrategy, redis, client, redisKey ) {		
+module.exports = function(app, passport, LocalStrategy, redis, client, redisKey, hasher ) {		
 	app.get("/login", function(req, res) {
 		//ejs 페이지 로드
 		res.render( 'login' ,{
@@ -8,21 +8,21 @@ module.exports = function(app, passport, LocalStrategy, redis, client, redisKey 
 		});
 	});
 	
-	passport.serializeUser(function(user, done) {
-		done(null, user.username );  //username 은 user key 값.
+	passport.serializeUser(function(username, done) {
+		done(null, username );  //username 은 user key 값.
 	});
 
 	//login 이후에는 deserializeUser로 사용자를 식별.
-	passport.deserializeUser( function( id, done) {				
+	passport.deserializeUser( function( username, done) {				
 		//find user
-		var key = redisKey.redisUsername(id);
-		client.get(key, function( err, reply ) {
-			console.log( reply.toString() );
+		var key = redisKey.redisUsername( username );
+		client.hgetall(key, function( err, reply ) {			
 			if( !reply ) {			
 				console.log("not found");
 				return done(null, false, { message: 'Not found'} );				
 			}
-			done(null, id);
+			console.log( reply );
+			done(null, username);
 		});						
 	});
 	
@@ -32,25 +32,22 @@ module.exports = function(app, passport, LocalStrategy, redis, client, redisKey 
 				//if(err) { return done(err); } // db connect error 처리
 											
 				var key = redisKey.redisUsername(username);
-				client.get(key, function( err, reply ) {
-					console.log( reply.toString() );
+				client.hgetall(key, function( err, reply ) {					
 					if( !reply ) {			
 						console.log("not found");
 						return done(null, false, { message: 'Not found'} );				
 					}
-												
-					key = redisKey.redisPassword(username);
-					client.get(key, function( err, reply ) {
-						console.log( reply.toString() );
-						if( reply !== password ) {
-							console.log("incorrect password");
-							return done(null, false, { message: 'Incorrect Password'} );				
-						}			
-						var user = {
-								"username" : username						
-						};
-						return done(null, user);	 // user login 성공 -> serializeUser 호출
-					});		
+					console.dir( reply );
+					
+					hasher( {password:password, salt: reply.salt }, function(err, pass, salt, hash){	
+						if( hash !== reply.password ) {
+							console.log("incorrect password hash->"+hash);
+							console.log("incorrect password db pw->"+reply.password);
+							return done(null, false, { message: 'Incorrect Password'} );
+						}
+																		
+						done(null, username);	 // user login 성공 -> serializeUser 호출						
+					} );																						
 				});																					
 			}
 	));
@@ -82,22 +79,28 @@ module.exports = function(app, passport, LocalStrategy, redis, client, redisKey 
 		
 		var key = redisKey.redisUsername( username );
 		
-		client.get( key, function ( err, reply ) {
-			console.log( reply.toString() );
-			if( reply ) {											
+		client.get( key, function ( err, reply ) {			
+			if( reply ) {
+				console.log( reply.toString() );
 				console.log("already exists");
 				res.render("signup", {
 					title: "Sign up",				
 				});
 				return;
-			}
-			var password = req.body.password; //암호화
-			var email = req.body.email;						
-			
-			client.set( key, username, redis.print );
-			client.set( redisKey.redisPassword(username) , password, redis.print );
-			client.set( redisKey.redisEmail(username) , email, redis.print );		
-			res.redirect("/login");			
+			}			
+			var password = req.body.password;
+			var email = req.body.email;		
+			//암호화			
+			hasher( {password:password}, function(err, pass, salt, hash){	
+				client.hmset( key,
+					{
+						"password": hash,
+						"salt": salt,
+						"email": email
+					}
+				);				
+				res.redirect("/login");	
+			} );						
 		});							
 	});
 };
