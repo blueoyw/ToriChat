@@ -7,6 +7,7 @@ var express = require('express')
 	, cookieparser = require('cookie-parser')
 	, session = require('express-session')
 	, RedisStore = require('connect-redis')(session) //session store in redis
+	, redisKey = require('./redisKey')
 	, passport = require('passport')
 	, LocalStrategy = require('passport-local').Strategy
   //, routes = require('./routes')
@@ -68,15 +69,14 @@ if ('development' == app.get('env')) {
 //app.get('/', routes.index);
 //app.get('/users', user.list);
 
-
 http.createServer(app).listen(app.get('port'), function(){
   console.log('Express server listening on port ' + app.get('port'));
 });
 
 require('./routes/index')(app, redis, client);
-require('./routes/auth')(app, passport, LocalStrategy, redis, client);
+require('./routes/auth')(app, passport, LocalStrategy, redis, client, redisKey );
 //require('./routes/session')(app, redis, client);
 require('./routes/user')(app, client);
-require('./routes/message')(app, redis, client);
+require('./routes/chat')(app, redis, client, redisKey);
 
 //client.end(true);
