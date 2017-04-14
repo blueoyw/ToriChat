@@ -6,14 +6,16 @@
     "start": "node app.js"
   },
   "dependencies": {
+    "body-parser": "^1.17.1",
     "connect-redis": "^3.2.0",
     "cookie-parser": "^1.4.3",
     "ejs": "*",
-    "express": "3.2.6",
+    "express": "^4.15.2",
     "express-session": "^1.15.2",
     "passport": "^0.3.2",
     "passport-local": "^1.0.0",
     "pbkdf2-password": "^1.2.1",
-    "redis": "^2.7.1"
+    "redis": "^2.7.1",
+    "socket.io": "^1.7.3"
   }
 }
