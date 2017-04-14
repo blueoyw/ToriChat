@@ -8,29 +8,33 @@ module.exports = function(app, passport, LocalStrategy, redis, client, redisKey,
 		});
 	});
 	
-	passport.serializeUser(function(username, done) {
-		done(null, username );  //username 은 user key 값.
+	passport.serializeUser( function(user, done) {
+		console.log("serializeUser");
+		done(null, user );  //username 은 user key 값.
 	});
 
 	//login 이후에는 deserializeUser로 사용자를 식별.
-	passport.deserializeUser( function( username, done) {				
+	passport.deserializeUser( function( user, done) {				
 		//find user
-		var key = redisKey.redisUsername( username );
+		console.log("deserializeUser=>");
+		console.dir( user );
+		var key = redisKey.redisUsername( user.username );
 		client.hgetall(key, function( err, reply ) {			
 			if( !reply ) {			
 				console.log("not found");
 				return done(null, false, { message: 'Not found'} );				
-			}
-			console.log( reply );
-			done(null, username);
+			}			
+			done(null, user );		//여기서 req.user에 데이터를 저장.
 		});						
 	});
 	
-	passport.use( new LocalStrategy(
+	passport.use( new LocalStrategy(			
 			//실제 인증 시 실행되는 전략.
 			function(username, password, done ){
 				//if(err) { return done(err); } // db connect error 처리
-											
+				
+				console.log("passport.use");
+				
 				var key = redisKey.redisUsername(username);
 				client.hgetall(key, function( err, reply ) {					
 					if( !reply ) {			
@@ -46,7 +50,7 @@ module.exports = function(app, passport, LocalStrategy, redis, client, redisKey,
 							return done(null, false, { message: 'Incorrect Password'} );
 						}
 																		
-						done(null, username);	 // user login 성공 -> serializeUser 호출						
+						done(null, reply);	 // user login 성공 -> serializeUser 호출						
 					} );																						
 				});																					
 			}
@@ -92,15 +96,39 @@ module.exports = function(app, passport, LocalStrategy, redis, client, redisKey,
 			var email = req.body.email;		
 			//암호화			
 			hasher( {password:password}, function(err, pass, salt, hash){	
-				client.hmset( key,
-					{
+				var user = {
+						"username": username,
 						"password": hash,
 						"salt": salt,
 						"email": email
-					}
-				);				
-				res.redirect("/login");	
+					};				
+				client.hmset( key, user );
+				req.login( user, function(err){
+					req.session.save( function () { //login이 성공하여 session이 생성되면 redirect
+						res.redirect("/chat");
+					});
+				});							
+				
+				/*
+				client.hmset( key, user, function(err, res){
+					
+				});
+													
+											
+				req.login( user, function(err){
+					req.session.save( function () {
+						res.redirect("/chat");
+					});					
+				} );
+				*/
 			} );						
 		});							
+	});
+	
+	app.get("/logout", function(req, res) {
+		req.logout();	//logout passport
+		req.session.save( function () { //logout이 성공하여 session이 삭제되면 redirect
+			res.redirect("/login");
+		});		
 	});
 };
