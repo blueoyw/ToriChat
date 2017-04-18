@@ -5,6 +5,7 @@
 
 var express = require('express')
 	, bodyParser = require('body-parser')
+	, PropertiesReader = require('properties-reader')
 	, cookieparser = require('cookie-parser')
 	, session = require('express-session')
 	, redis = require('redis')
@@ -20,6 +21,9 @@ var express = require('express')
   ;
 
 var app = express();
+
+var properties = PropertiesReader('./config.ini');
+
 var hasher = pbkdf2();
 
 //redis
@@ -84,8 +88,17 @@ http.createServer(app).listen(app.get('port'), function(){
 require('./routes/index')(app, redis, client);
 require('./routes/auth')(app, passport, LocalStrategy, redis, client, redisKey, hasher );
 //require('./routes/session')(app, redis, client);
-require('./routes/chat')(app, redis, client, redisKey);
+require('./routes/chat')(app, redis, client, redisKey, properties);
 
+// publish socket server manage channel
+var count = properties.get('server.count');
+for( var i=0; i<count; i++) {
+	var ip = properties.get('server_'+i+'.ip');
+	console.log(ip+" publish");
+	client.publish( ip, 'start channel' );
+}
+
+/*
 app.get('/chat',function(req, res){
 	if ( !req.user ) {		//passport 인증 완료 확인
 		res.redirect("/login");
@@ -93,5 +106,6 @@ app.get('/chat',function(req, res){
 	}
 	res.sendFile(__dirname+'/views/chat.html');
 });
+*/
 
 //client.end(true);
