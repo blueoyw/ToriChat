@@ -88,7 +88,7 @@ module.exports = function ( app, redis, client, redisKey, properties ) {
 		var port = properties.get('server_'+lb+'.port');
 		lb = (lb+1)%count;						
 		req.session.ip = ip;
-		req.session.port = port;
+		req.session.port = port;		
 		
 		//redis notify to socket server
 		var msg = "crte|"+req.originalUrl ;
@@ -99,7 +99,7 @@ module.exports = function ( app, redis, client, redisKey, properties ) {
 			title: req.params.title,
 			ip: ip,
 			port: port,
-			username: req.user.username
+			username: req.params.username
 		});
 		
 	});
