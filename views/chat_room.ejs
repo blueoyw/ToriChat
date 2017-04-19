@@ -34,7 +34,7 @@
 		
         $('#chat').submit( function(e){
 			e.preventDefault();
-			var url = "http://localhost:3000/chat/<%=username%>/room/<%=title%>/message";
+			var url = "http://localhost:3000/chat/room/<%=title%>/message";
 			var m = $('#m').val();						
 			console.log(url);
 			console.log(m);
@@ -47,6 +47,7 @@
 				dataType: "json",
 				success: function(data) {										
       				console.log('성공 - ', data);
+      				$("#m").val('');
     			},
 				error: function(xhr) {
       				console.log('실패 - ', xhr);					
@@ -61,7 +62,7 @@
         });
 */
 
-		var channel = "/chat/<%=username%>/room/<%=title%>";
+		var channel = "/chat/room/<%=title%>";
         socket.on( channel, function(msg){
           $('#messages').append($('<li>').text(msg));
           window.scrollTo(0, document.body.scrollHeight);

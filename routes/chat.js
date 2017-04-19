@@ -16,7 +16,7 @@ module.exports = function ( app, redis, client, redisKey, properties ) {
 	});
 	
 	//방 리스트
-	app.get("/chat/:username/room", function(req, res){
+	app.get("/chat/room", function(req, res){
 		if ( !req.user ) {		//passport 인증 완료 확인
 			res.redirect("/login");
 			return;
@@ -33,7 +33,7 @@ module.exports = function ( app, redis, client, redisKey, properties ) {
 	});
 	
 	//방 생성 화면
-	app.get("/chat/:username/room/new", function(req, res){
+	app.get("/chat/room/new", function(req, res){
 		if ( !req.user ) {		//passport 인증 완료 확인
 			res.redirect("/login");
 			return;
@@ -47,7 +47,7 @@ module.exports = function ( app, redis, client, redisKey, properties ) {
 	});
 	
 	//방 생성
-	app.post("/chat/:username/room", function(req, res){
+	app.post("/chat/room", function(req, res){
 		if ( !req.user ) {		//passport 인증 완료 확인
 			res.redirect("/login");
 			return;
@@ -64,7 +64,7 @@ module.exports = function ( app, redis, client, redisKey, properties ) {
 		
 		console.log(req.originalUrl);
 		var key = req.originalUrl +"/" + title;
-		console.log(key);
+		console.log(key);				
 		
 		//push to redis		
 		client.rpush( req.originalUrl, req.body.title );
@@ -72,11 +72,11 @@ module.exports = function ( app, redis, client, redisKey, properties ) {
 		//redis publish
 		client.publish( key, 'start room' );
 				
-		res.redirect("/chat/"+username+"/room/"+title);				
+		res.redirect("/chat/room/"+title);				
 	});
 	
 	//방 참여
-	app.get("/chat/:username/room/:title", function(req, res){
+	app.get("/chat/room/:title", function(req, res){
 		if ( !req.user ) {		//passport 인증 완료 확인
 			res.redirect("/login");
 			return;
@@ -99,23 +99,23 @@ module.exports = function ( app, redis, client, redisKey, properties ) {
 			title: req.params.title,
 			ip: ip,
 			port: port,
-			username: req.params.username
+			username: req.user.username
 		});
 		
 	});
 	
-	app.post("/chat/:username/room/:title/message", function(req, res){
+	app.post("/chat/room/:title/message", function(req, res){
 		if ( !req.user ) {		//passport 인증 완료 확인
 			res.redirect("/login");
 			return;
 		}		
-		var username = req.params.username;
+		var username = req.user.username;
 		var title = req.params.title;
 		
 		console.log( '메시지=>'+ req.body.message );
 		
 		//redis publish
-		var channel = '/chat/' + username + '/room/' + title;
+		var channel = '/chat/room/' + title;
 		client.publish( channel, req.body.message );
 		
 		var result = {};

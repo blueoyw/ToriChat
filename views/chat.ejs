@@ -6,9 +6,11 @@
   </head>
   <body>
     <h1><%= title %></h1>
+    <h2>Hello~. <%=username%></h2>
     <ul>
-	    <li><a href='/chat/<%=username%>/room'>방 목록</a></li>
-	    <li><a href='/chat/<%=username%>/room/new'>방 생성</a></li>	    
+	    <li><a href='/chat/room'>방 목록</a></li>
+	    <li><a href='/chat/room/new'>방 생성</a></li>	
+	    <li><a href='/logout'>로그아웃</a></li>	    
     </ul>
     <form id="room" name="room" method="post" action="/chat/<%=username%>/room">    
     </form>
